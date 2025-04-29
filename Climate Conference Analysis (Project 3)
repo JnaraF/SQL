@@ -25,13 +25,11 @@ CREATE TABLE events (
   , event_type TEXT
   );
   
-
 CREATE TABLE hotels (
     hotel_id INTEGER PRIMARY KEY
   , hotel_name TEXT
   , address TEXT
   );
-
 
 INSERT INTO vips VALUES
 (2814, 'Fletcher', 'David', 5, 3742, 'Anishinabek Educational Institute', 'education', 2004)
@@ -66,7 +64,6 @@ INSERT INTO vips VALUES
 ,(2800, 'Lee', 'Min-Jun', NULL, NULL, 'US Department of Renewable Energy', 'government', 2004)
 ;
 
-
 INSERT INTO reservations VALUES
  (3491,  1, 1, 1)
 ,(4361,  1, 1, 1)
@@ -100,7 +97,6 @@ INSERT INTO reservations VALUES
 ,(1934,  3, 1, 1)
 ;
 
-
 INSERT INTO events VALUES
   (1, 'Climate Change Communication: Engaging the Public and Policy Makers', 'Keynote')
 , (2, 'Climate Change and Public Health: Risks and Responses', 'Panel')
@@ -116,9 +112,127 @@ INSERT INTO events VALUES
 , (12, 'The Role of Policy in Combating Climate Change', 'Workshop')
 ;
 
-
 INSERT INTO hotels VALUES
    (1, 'Hyatt Downtown', '392 South Main Street, Cityville, PA')
  , (2, 'Marriott', '1240 Marshall Avenue, Cityville, PA')
  , (3, 'Four Season''s', '900 Winter Road, Cityville, PA')
  ;
+
+--Taking a look at the data tables to get started.
+
+SELECT * FROM vips LIMIT 5;
+SELECT * FROM reservations LIMIT 5;
+SELECT * FROM events LIMIT 5;
+SELECT * FROM hotels LIMIT 5;
+
+--The following are analyses conducted by me:
+
+-- LEFT JOIN: List all the VIPs by last name, and the hotel at which they are staying, alphabetically by hotel.
+
+SELECT vips.last_name, hotels.hotel_name
+FROM vips
+LEFT JOIN reservations
+ON vips.member_id = reservations.member_id
+LEFT JOIN hotels
+ON reservations.hotel = hotels.hotel_id
+ORDER BY hotels.hotel_name ASC
+;
+
+-- INNER JOIN: Determine which VIP attendees are attending the dinner.
+
+SELECT vips.last_name
+FROM vips
+INNER JOIN reservations
+ON vips.member_id = reservations.member_id
+WHERE dinner_rsvp = 1
+ORDER BY vips.last_name ASC
+;
+
+-- Custom Query, INNER JOIN: Which VIPs are only attending a workshop, what is the name of the workshop, what association type are they from, and since when have they been a member?
+
+SELECT vips.first_name, vips.last_name, events.event_name, vips.assoc_type, vips.member_since
+FROM vips
+INNER JOIN events
+ON vips.event = events.event_id
+WHERE events.event_type LIKE '%workshop%'
+;
+
+-- RIGHT JOIN: List the association, and the last name for only the keynote speakers, and the names of the keynote events. Show that they are keynotes as well.
+
+SELECT vips.association, vips.last_name, events.event_name, events.event_type
+FROM vips
+RIGHT JOIN events
+ON vips.event = events.event_id
+WHERE events.event_type LIKE '%keynote%'
+;
+
+--Custom Query: How many events are there in total?
+
+SELECT COUNT (event_type)
+FROM events;
+
+--Custom Query: Let’s see all of the event details.
+
+SELECT *
+FROM events;
+
+-- Custom Query: Which VIPs are attending both the welcome party, and the dinner?
+
+SELECT vips.last_name, reservations.welcome_rsvp, reservations.dinner_rsvp
+FROM vips
+INNER JOIN reservations
+ON vips.member_id = reservations.member_id
+WHERE welcome_rsvp = 1
+AND dinner_rsvp = 1
+ORDER BY vips.last_name ASC
+;
+
+-- SELF JOIN: Which VIP attendees are reviewing which other VIP speakers?
+
+SELECT Reviewing.last_name AS Reviewer, Speaking.last_name AS Speaker 
+FROM vips AS Reviewing
+JOIN vips AS Speaking
+ON Reviewing.provides_feedback_to = Speaking.member_id
+ORDER BY Speaker ASC
+;
+
+--Multiple JOINS: What event are the speakers being reviewed, speaking at?
+
+SELECT Reviewing.last_name AS Reviewer, Speaking.last_name AS Speaker, events.event_name AS Event
+FROM vips AS Reviewing
+JOIN vips AS Speaking
+ON Reviewing.provides_feedback_to = Speaking.member_id
+LEFT JOIN events
+ON Speaking.event = events.event_id
+ORDER BY Event ASC
+;
+
+--Custom Query: Let’s see if there is a difference between the amount of VIP members, and how many are providing reviews.
+
+SELECT COUNT (member_id), COUNT (event), COUNT(provides_feedback_to)
+FROM vips;
+
+--Custom Query: Which VIP attendees are not reviewing anyone, and which association are they from?
+
+SELECT vips.first_name, vips.last_name, vips.provides_feedback_to, vips.association
+FROM vips
+WHERE vips.provides_feedback_to IS NULL
+;
+
+-- Query with a Subquery: Find VIPs attending the event(s) with the most VIP participants. List those events too, and their event numbers.
+
+SELECT vips.first_name, vips.last_name, events.event_name, vips.event 
+FROM vips
+FULL JOIN events
+ON vips.event = events.event_id
+WHERE vips.event IN 
+(SELECT event 
+    FROM vips 
+    GROUP BY event 
+    ORDER BY COUNT(*) DESC
+    LIMIT 5
+    )
+ORDER BY vips.event
+;
+
+--End.
