@@ -1,0 +1,63 @@
+-- Here, I am using SQL to look at a multi-table database, and draw out some of the key customer and order data.
+
+-- 1. How many many unique orders were placed in January? In other words, how many distinct order ids do we have?
+
+SELECT COUNT(distinct orderid)
+FROM BIT_DB.JanSales
+WHERE length(orderid) = 6
+AND orderid <> 'Order ID';
+
+-- 2. How many of those orders were for an iPhone?
+
+SELECT COUNT (distinct orderID)
+FROM BIT_DB.JanSales
+WHERE Product LIKE '%iphone%'
+AND length(orderid) = 6
+AND orderid <> 'Order ID';
+
+-- 3.Select the customer account numbers for all the orders that were placed in February.
+
+SELECT distinct acctnum
+FROM BIT_DB.customers
+JOIN BIT_DB.FebSales
+ON order_id = orderID
+WHERE length(orderid) = 6
+AND orderid <> 'Order ID';
+
+-- 4. Which product was the cheapest one sold in January, and what was the price?
+
+SELECT MIN(price), Product
+FROM BIT_DB.JanSales;
+
+-- 5. What is the total revenue for each product sold in January? Using number of products and price to determine revenue.
+
+SELECT distinct Product, ROUND(SUM (Quantity*price), 2) AS Total_Revenue
+FROM BIT_DB.JanSales Jan
+WHERE length(orderid) = 6
+AND orderid <> 'Order ID'
+GROUP BY product
+ORDER BY Total_Revenue ASC;
+
+-- 6. Which products were sold in February at 548 Lincoln St, Seattle, WA 98101, how many of each were sold, and what was the total revenue?
+
+SELECT *
+From BIT_DB.FebSales
+LIMIT 20;
+
+SELECT Product, SUM(Quantity) AS Number_Sold, SUM(Quantity)*price AS Total_revenue
+FROM BIT_DB.FebSales Feb
+WHERE Feb.location LIKE '%548 Lincoln%'
+AND length(orderid) = 6
+AND orderid <> 'Order ID'
+GROUP BY product
+ORDER BY Total_Revenue ASC;
+
+-- 7. How many customers ordered more than 2 products at a time in February, and what was the average amount spent for those customers?
+
+SELECT COUNT (cust.acctnum) AS Customers, ROUND(AVG(Feb.Quantity*Feb.price), 2) AS Avg_Spent
+FROM BIT_DB.customers cust
+RIGHT JOIN BIT_DB.FebSales Feb
+ON cust.order_id = Feb.orderID
+WHERE Feb.Quantity > 2
+AND length(Feb.orderid) = 6
+AND Feb.orderid <> 'Order ID';
