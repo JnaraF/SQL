@@ -1,5 +1,5 @@
---In this analysis, Break Into Tech provided the SQL for constructing the table (lines 4-23 here), and the data within it. 
---Following the data table creation, I queried the data with SQL to get a better understanding of it.
+-- In this project, Break Into Tech provided the SQL for constructing the table (lines 4-23 here), and how to insert the Spotify data .csv into the table. 
+-- Following the data table creation, I queried the data with SQL to get a better understanding of it.
 
 CREATE TABLE BIT_DB.Spotifydata (
 id integer PRIMARY KEY,
@@ -28,7 +28,7 @@ time_signature integer NOT NULL )
 SELECT *
 FROM BIT_DB.Spotifydata;
 
--- 1. What is the average danceability by artist, and track? (How would you do danceability by track? That's not an average...)
+-- 1. What is the average danceability by artist? 
 
 SELECT artist_name, ROUND(AVG(danceability), 4) as Average_danceability
 FROM BIT_DB.Spotifydata
