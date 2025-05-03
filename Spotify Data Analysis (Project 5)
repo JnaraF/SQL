@@ -1,0 +1,95 @@
+--In this analysis, Break Into Tech provided the SQL for constructing the table (lines 4-23 here), and the data within it. 
+--Following the data table creation, I queried the data with SQL to get a better understanding of it.
+
+CREATE TABLE BIT_DB.Spotifydata (
+id integer PRIMARY KEY,
+artist_name varchar NOT NULL,
+track_name varchar NOT NULL,
+track_id varchar NOT NULL,
+popularity integer NOT NULL,
+danceability decimal(4,3) NOT NULL,
+energy decimal(4,3) NOT NULL,
+song_key integer NOT NULL,
+loudness decimal(5,3) NOT NULL,
+song_mode integer NOT NULL,
+speechiness decimal(5,4) NOT NULL,
+acousticness decimal(6,5) NOT NULL,
+instrumentalness decimal(8,7) NOT NULL,
+liveness decimal(5,4) NOT NULL,
+valence decimal(4,3) NOT NULL,
+tempo decimal(6,3) NOT NULL,
+duration_ms integer NOT NULL,
+time_signature integer NOT NULL )
+;
+
+-- Self-lead analysis:
+-- Take a look at the data.
+
+SELECT *
+FROM BIT_DB.Spotifydata;
+
+-- 1. What is the average danceability by artist, and track? (How would you do danceability by track? That's not an average...)
+
+SELECT artist_name, ROUND(AVG(danceability), 4) as Average_danceability
+FROM BIT_DB.Spotifydata
+GROUP BY artist_name;
+
+-- 2. Who are the top 10 artists based on popularity?
+
+SELECT artist_name, ROUND(AVG(popularity), 2) as Popularity
+FROM BIT_DB.Spotifydata
+GROUP BY artist_name
+ORDER BY Popularity DESC
+LIMIT 10;
+
+-- 3. What artist released the longest song, and what is the length of it?
+
+SELECT artist_name, MAX(duration_ms) as Length_ms
+FROM BIT_DB.Spotifydata;
+
+
+-- 4. What is the average danceability for the 10 most popular songs?
+
+SELECT AVG(danceability) as Average_danceability
+FROM BIT_DB.Spotifydata
+ORDER BY popularity DESC
+LIMIT 10;
+
+-- Check those
+
+SELECT track_name, popularity, danceability
+FROM BIT_DB.Spotifydata
+ORDER BY popularity DESC
+LIMIT 10;
+
+-- 5. What is the name and length of the shortest song?
+
+SELECT track_name, MIN(duration_ms) as Length_ms
+FROM BIT_DB.Spotifydata;
+
+-- 6. What is the average length of all the songs in this table?
+
+SELECT COUNT(track_name) as Number_of_songs, AVG(duration_ms) as Average_length_ms
+FROM BIT_DB.Spotifydata;
+
+-- 7. Which song keys are the most popular (have the most songs in it)?
+
+SELECT COUNT(track_name), song_key
+FROM BIT_DB.Spotifydata
+GROUP BY song_key
+ORDER BY COUNT(track_name) DESC
+LIMIT 3;
+
+-- 8. Which artist produced the song with the most acoustic sound, and what was the song?
+
+SELECT artist_name, track_name
+FROM BIT_DB.Spotifydata
+ORDER BY acousticness DESC
+LIMIT 1;
+
+-- 9. Which artist produced the song with the least acoustic sound, and what was the song?
+
+SELECT artist_name, track_name
+FROM BIT_DB.Spotifydata
+ORDER BY acousticness ASC
+LIMIT 1;
