@@ -1,0 +1,247 @@
+-- In this project, Break Into Tech provided the database file, which I connected to with SQLite Studio. 
+-- I queried the multi-table database with SQL to get a better understanding of it, and draw out some key findings.
+
+-- 1. Display the customers, with customer ID and country, who are not in the US.
+
+SELECT FirstName, LastName, CustomerId, Country
+FROM chinook.customers
+WHERE Country NOT LIKE 'US%';
+
+-- 2. Display only the Customers from Brazil.
+
+SELECT FirstName, LastName, CustomerId, Country
+FROM chinook.customers
+WHERE Country LIKE '%brazil%';
+
+-- 3. Find the Invoices of customers who are from Brazil, showing full name, Invoice ID, Date of the invoice, and billing country.
+
+SELECT FirstName, LastName, InvoiceId, InvoiceDate, BillingCountry
+FROM chinook.customers cust
+JOIN chinook.invoices invoices
+ON cust.CustomerId = invoices.CustomerId
+WHERE cust.Country LIKE '%brazil%';
+
+-- 4. Show the Employees who are Sales Agents.
+
+SELECT FirstName, LastName, Title
+FROM chinook.employees
+WHERE Title LIKE '%agent%';
+
+-- 5. Find a unique list of billing countries from the Invoice table.
+
+SELECT distinct BillingCountry
+FROM chinook.invoices;
+
+-- 6. Which invoices are associated with which each sales agent?
+
+SELECT invoices.InvoiceID, empl.FirstName, empl.LastName
+FROM chinook.invoices invoices
+JOIN chinook.customers cust
+ON invoices.CustomerId = cust.CustomerId
+JOIN chinook.employees empl
+ON cust.SupportRepId = empl.EmployeeId
+ORDER BY empl.LastName ASC;
+
+-- 7.Find the Invoice Total, Customer name, Country, and Sales Agent name for all invoices and customers.
+
+SELECT invoices.Total, cust.FirstName, cust.LastName, cust.Country, empl.FirstName as SAFirst, empl.LastName as SALast
+FROM chinook.invoices invoices
+JOIN chinook.customers cust
+ON invoices.CustomerId = cust.CustomerId
+JOIN chinook.employees empl
+ON cust.SupportRepId = empl.EmployeeId
+ORDER BY invoices.Total, SALast ASC;
+
+-- 8. How many Invoices were there in 2009?
+
+SELECT *
+FROM chinook.invoices
+LIMIT 3;
+
+SELECT COUNT(invoices.InvoiceId) as Amount_of_Invoices_2009
+FROM chinook.invoices
+WHERE invoices.InvoiceDate LIKE '2009%';
+
+-- 9. What are the total sales for 2009?
+
+SELECT SUM(invoices.Total) AS Total_Sales_2009
+FROM chinook.invoices
+WHERE invoices.InvoiceDate LIKE '2009%';
+
+-- 10. What are the track names associated with each invoice line ID?
+
+SELECT inv.InvoiceLineId, tracks.Name
+FROM chinook.invoice_items inv
+JOIN chinook.tracks tracks
+ON inv.TrackId = tracks.TrackId
+ORDER BY tracks.Name;
+
+-- 11. What are the track names, and artist names, associated with each invoice line ID?
+
+SELECT inv.InvoiceLineId, tracks.Name, artists.Name as Artist_name
+FROM chinook.invoice_items inv
+JOIN chinook.tracks tracks
+ON inv.TrackId = tracks.TrackId
+JOIN chinook.albums albums
+ON tracks.AlbumId = albums.AlbumID
+JOIN chinook.artists artists
+ON albums.ArtistId = artists.ArtistId
+ORDER BY inv.InvoiceLineId;
+
+-- 12. Display all tracks, along with the album name, media type, and genre.
+
+SELECT tracks.Name, albums.Title, media.Name as Media, genres.Name as Genre
+FROM chinook.tracks tracks
+LEFT JOIN chinook.albums albums
+ON tracks.AlbumId = albums.AlbumId
+LEFT JOIN chinook.media_types media
+ON tracks.MediaTypeId = media.MediaTypeId
+LEFT JOIN chinook.genres genres
+ON tracks.GenreId = genres.GenreId
+ORDER BY albums.Title;
+
+-- 13. What are the total sales made by each sales agent?
+
+SELECT SUM(invoices.Total) as Total_Sales, employees.FirstName as SAFirst, employees.LastName as SALast
+FROM chinook.invoices invoices
+LEFT JOIN chinook.customers cust
+ON invoices.CustomerId = cust.CustomerId
+LEFT JOIN chinook.employees employees
+ON cust.SupportRepId = employees.EmployeeId
+GROUP BY employees.EmployeeID;
+
+
+-- 14. Which sales agent made the most dollars in sales in 2009?
+
+With temp AS (
+    SELECT SUM(invoices.Total) as Total_Sales, employees.FirstName as SAFirst, employees.LastName as SALast
+    FROM invoices invoices
+    LEFT JOIN customers cust
+    ON invoices.CustomerId = cust.CustomerId
+    LEFT JOIN employees employees
+    ON cust.SupportRepId = employees.EmployeeId
+    WHERE invoices.InvoiceDate LIKE '2009%'
+    GROUP BY employees.EmployeeID
+    )
+SELECT MAX(Total_Sales) as Top_Sales, SAFirst, SALast
+FROM temp;
+
+-- 15. What genre contains the most amount of tracks?
+
+SELECT COUNT(TrackId), genres.Name
+FROM chinook.tracks tracks
+LEFT JOIN chinook.genres genres
+ON tracks.GenreId = genres.GenreId
+GROUP BY genres.Name
+ORDER BY COUNT(TrackId) DESC
+LIMIT 1;
+
+-- Check:
+SELECT COUNT(TrackId), genres.Name
+FROM chinook.tracks tracks
+LEFT JOIN chinook.genres genres
+ON tracks.GenreId = genres.GenreId
+GROUP BY genres.Name
+ORDER BY COUNT(TrackId) DESC;
+
+-- 16. What genre of music is purchased the most? The least?
+
+SELECT COUNT(invoice.InvoiceLineId) AS Purchases, genres.Name
+FROM chinook.invoice_items invoice
+LEFT JOIN chinook.tracks tracks
+ON invoice.TrackId = tracks.TrackId
+LEFT JOIN chinook.genres genres
+ON tracks.GenreId = genres.GenreId
+GROUP BY genres.Name
+ORDER BY Purchases DESC
+LIMIT 1;
+
+SELECT COUNT(invoice.InvoiceLineId) AS Purchases, genres.Name
+FROM chinook.invoice_items invoice
+LEFT JOIN chinook.tracks tracks
+ON invoice.TrackId = tracks.TrackId
+LEFT JOIN chinook.genres genres
+ON tracks.GenreId = genres.GenreId
+GROUP BY genres.Name
+ORDER BY Purchases ASC
+LIMIT 1;
+
+-- 17. What customer (by ID) has made the most purchases, and what is the amount of items they have bought?
+
+ SELECT cust.CustomerId, COUNT(items.InvoiceLineId), SUM(Quantity)
+ FROM chinook.customers cust
+ JOIN chinook.invoices invoices
+ ON cust.CustomerId = invoices.CustomerId
+ JOIN chinook.invoice_items items
+ ON invoices.InvoiceId = items.InvoiceId
+ GROUP BY cust.CustomerId;
+ 
+-- 18. What customer (Id, full name) has spent the most?
+
+SELECT cust.CustomerId, cust.FirstName, cust.LastName, SUM(inv.Total)
+FROM chinook.customers cust
+JOIN chinook.invoices inv
+ON cust.CustomerId = inv.CustomerId
+GROUP BY cust.CustomerId
+ORDER BY SUM(inv.Total) DESC;
+
+-- 19. What is the average number of tracks by an artist in the media store?
+
+WITH temp AS (
+    SELECT COUNT(tracks.TrackId) as Number_of_tracks, art.Name as Name
+    FROM tracks tracks
+    LEFT JOIN albums alb
+    ON tracks.AlbumId = alb.AlbumId
+    JOIN artists art
+    ON alb.ArtistId = art.ArtistId
+    GROUP BY art.ArtistId
+    )
+SELECT Name, Number_of_tracks, AVG(Number_of_tracks) OVER (Name) as 'Average_tracks'  
+FROM temp;
+
+-- 20. What is the split in media type, between MPEG and AAC?
+
+SELECT *
+FROM chinook.media_types;
+
+WITH temp AS (
+    SELECT COUNT(tracks.TrackId) as Count, media.Name as Name
+    FROM tracks
+    JOIN media_types media
+    ON tracks.MediaTypeId = media.MediaTypeId
+    GROUP BY media.Name
+    )
+SELECT SUM(Count) as Total_files_MPEG
+FROM temp
+WHERE Name LIKE '%MPEG%';
+
+WITH temp AS (
+    SELECT COUNT(tracks.TrackId) as Count, media.Name as Name
+    FROM tracks
+    JOIN media_types media
+    ON tracks.MediaTypeId = media.MediaTypeId
+    GROUP BY media.Name
+    )
+SELECT SUM(Count) as Total_files_AAC
+FROM temp
+WHERE Name LIKE '%AAC%';
+
+-- 21. What is the average track price, by artist?
+
+SELECT AVG(tr.UnitPrice) as Avg_price, art.Name
+FROM chinook.tracks tr
+JOIN chinook.albums alb
+ON tr.AlbumId = alb.AlbumId
+JOIN chinook.artists art
+ON alb.ArtistId = art.ArtistId
+GROUP BY art.ArtistId
+ORDER BY art.Name;
+
+-- check:
+SELECT tr.UnitPrice, art.Name
+FROM tracks tr
+JOIN albums alb
+ON tr.AlbumId = alb.AlbumId
+JOIN artists art
+ON alb.ArtistId = art.ArtistId
+WHERE art.Name LIKE '%AC/DC%';
